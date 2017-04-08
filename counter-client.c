@@ -11,6 +11,7 @@
 
 #define PORT "5678"
 #define RETRIES 3
+#define SLEEP_DURATION 2
 
 void usage(char *fileName)
 {
@@ -68,6 +69,12 @@ int main(int argc, char **argv)
             printf("\tHIT!\n");
         else
             printf("\tReceived %d from the server\n", responseNumber);
+        
+        if (i != RETRIES - 1)
+        {
+            printf("Sleeping %d seconds\n", SLEEP_DURATION);
+            sleep(SLEEP_DURATION);
+        }
     }
 
     printf("%d retries reached\n", RETRIES);
