@@ -31,6 +31,7 @@ int main(int argc, char **argv)
         ERR("listen");
     
     printf("Listening for connections on %d\n", PORT);
+    uint32_t highestNumber = 0;
 
     while (1)
     {
@@ -46,22 +47,23 @@ int main(int argc, char **argv)
         do
         {
             uint32_t number;
-            bytesRead = bulkRead(clientFd, (char*)&number, sizeof(uint32_t));
-            if (bytesRead < 0)
-                ERR("read");
-            else if (bytesRead == 0)
+            if ((bytesRead = networkReadNumber(clientFd, &number)) == 0)
             {
                 printf("Client disconnected\n");
                 break;
             }
             
-            number = ntohl(number);
-            printf("\tReceived %d from client, ", number);
-            number += 1;
-            printf("responding with %d\n", number);
+            printf("\tReceived %d from client\n", number);
 
-            number = htonl(number);
-            if (bulkWrite(clientFd, (char*)&number, sizeof(uint32_t)) < 0)
+            if (number > highestNumber)
+            {
+                highestNumber = number;
+                printf("\tNew highest number\n");
+            }
+            
+            printf("\tResponding with %d\n", highestNumber);
+
+            if (networkWriteNumber(clientFd, highestNumber) < 0)
                 ERR("write");
         } while (bytesRead > 0);
         

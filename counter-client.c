@@ -51,16 +51,24 @@ int main(int argc, char **argv)
 
         uint32_t initialNumber = 1 + rand() % 1000;
         printf("\tSending %d to the server\n", initialNumber);
-        initialNumber = htonl(initialNumber);
-        if (write(socketFd, (char*)&initialNumber, sizeof(uint32_t)) < 0)
-            ERR("write");
+        if (networkWriteNumber(socketFd, initialNumber) == 0)
+        {
+            printf("\tCannot send number\n");
+            break;
+        }
+            
         
         uint32_t responseNumber;
-        if (read(socketFd, (char*)&responseNumber, sizeof(uint32_t)) < 0)
-            ERR("read");
-        responseNumber = ntohl(responseNumber);
+        if (networkReadNumber(socketFd, &responseNumber) == 0)
+        {
+            printf("\tCannot read number, connection broken\n");
+            break;
+        }
 
-        printf("\tReceived %d from the server\n", responseNumber);
+        if (responseNumber == initialNumber)
+            printf("\tHIT!\n");
+        else
+            printf("\tReceived %d from the server\n", responseNumber);
     }
 
     printf("%d retries reached\n", RETRIES);

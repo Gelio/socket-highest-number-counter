@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <netinet/in.h>
 #include "counter-common.h"
 
 ssize_t bulkRead(int fd, char *buffer, size_t length)
@@ -37,4 +38,19 @@ ssize_t bulkWrite(int fd, char *buffer, size_t length)
     }
 
     return totalBytesWritten;
+}
+
+int networkReadNumber(int fd, uint32_t *number)
+{
+    ssize_t bytesRead = bulkRead(fd, (char*)number, sizeof(uint32_t));
+    if (bytesRead == sizeof(uint32_t))
+        *number = ntohl(*number);
+    return (bytesRead == sizeof(uint32_t)) ? 0 : -1;
+}
+
+int networkWriteNumber(int fd, uint32_t number)
+{
+    number = htonl(number);
+    ssize_t bytesWritten = bulkWrite(fd, (char*)&number, sizeof(uint32_t));
+    return (bytesWritten == sizeof(uint32_t)) ? 0 : -1;
 }
