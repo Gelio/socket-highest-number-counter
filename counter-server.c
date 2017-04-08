@@ -4,12 +4,13 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <unistd.h>
+#include "counter-common.h"
 
 #define PORT 5678
 #define BACKLOG 10
+#define RETRIES 3
 
-#define ERR(source) ( fprintf(stderr, "%s:%d\n", __FILE__, __LINE__), \
-                        perror(source), exit(EXIT_FAILURE) )
 
 int main(int argc, char **argv)
 {
@@ -31,21 +32,43 @@ int main(int argc, char **argv)
     
     printf("Listening for connections on %d\n", PORT);
 
-    int clientFd = 0;
-    if ((clientFd = accept(socketFd, NULL, NULL)) < 0)
-        ERR("accept");
-    
-    printf("Client connected\n");
+    while (1)
+    {
+        printf("Accepting clients\n");
 
-    uint32_t number;
-    if (read(clientFd, (char*)&number, sizeof(uint32_t)) < 0)
-        ERR("read");
-    
-    number = ntohl(number);
-    printf("Received %d from client. Closing connection\n", number);
+        int clientFd = 0;
+        if ((clientFd = accept(socketFd, NULL, NULL)) < 0)
+            ERR("accept");
+        
+        printf("\tClient connected, reading numbers\n");
 
-    if (close(clientFd) < 0)
-        ERR("close");
+        ssize_t bytesRead;
+        do
+        {
+            uint32_t number;
+            bytesRead = bulkRead(clientFd, (char*)&number, sizeof(uint32_t));
+            if (bytesRead < 0)
+                ERR("read");
+            else if (bytesRead == 0)
+            {
+                printf("Client disconnected\n");
+                break;
+            }
+            
+            number = ntohl(number);
+            printf("\tReceived %d from client, ", number);
+            number += 1;
+            printf("responding with %d\n", number);
+
+            number = htonl(number);
+            if (bulkWrite(clientFd, (char*)&number, sizeof(uint32_t)) < 0)
+                ERR("write");
+        } while (bytesRead > 0);
+        
+        printf("Closing client socket\n");
+        if (close(clientFd) < 0)
+            ERR("close");
+    }
 
     printf("Closing server\n");
     if (close(socketFd) < 0)

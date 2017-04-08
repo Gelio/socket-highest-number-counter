@@ -7,11 +7,10 @@
 #include <time.h>
 #include <netinet/tcp.h>
 #include <unistd.h>
+#include "counter-common.h"
 
 #define PORT "5678"
-
-#define ERR(source) ( fprintf(stderr, "%s:%d\n", __FILE__, __LINE__), \
-                        perror(source), exit(EXIT_FAILURE) )
+#define RETRIES 3
 
 void usage(char *fileName)
 {
@@ -44,15 +43,27 @@ int main(int argc, char **argv)
     if (connect(socketFd, &tcpAddress, sizeof(struct sockaddr_in)) < 0)
         ERR("connect");
     
-    printf("Connected");
+    printf("Connected\n");
     
-    uint32_t number = 1 + rand() % 1000;
-    number = htonl(number);
-    if (write(socketFd, (char*)&number, sizeof(uint32_t)) < 0)
-        ERR("write");
-    
-    printf("Number %d sent, closing connection\n", ntohl(number));
+    for (int i=0; i < RETRIES; i++)
+    {
+        printf("Try %d\n", i + 1);
 
+        uint32_t initialNumber = 1 + rand() % 1000;
+        printf("\tSending %d to the server\n", initialNumber);
+        initialNumber = htonl(initialNumber);
+        if (write(socketFd, (char*)&initialNumber, sizeof(uint32_t)) < 0)
+            ERR("write");
+        
+        uint32_t responseNumber;
+        if (read(socketFd, (char*)&responseNumber, sizeof(uint32_t)) < 0)
+            ERR("read");
+        responseNumber = ntohl(responseNumber);
+
+        printf("\tReceived %d from the server\n", responseNumber);
+    }
+
+    printf("%d retries reached\n", RETRIES);
     if (close(socketFd) < 0)
         ERR("close");
     printf("Exiting\n");

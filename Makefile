@@ -3,13 +3,13 @@ CFLAGS=-Wall
 
 .PHONY: clean
 
-all: counter-server counter-client
+all: server client
 
 clean:
 	rm counter-server counter-client
 
-server: counter-server.c
-	${CC} ${CFLAGS} ${LDLIBS} counter-server.c -o counter-server
+server: counter-server.c counter-common.c
+	$(CC) $(CFLAGS) $(LDLIBS) counter-common.c counter-server.c -o counter-server
 
-client: counter-client.c
-	${CC} ${CFLAGS} ${LDLIBS} counter-client.c -o counter-client
+client: counter-client.c counter-common.c
+	$(CC) $(CFLAGS) $(LDLIBS) counter-common.c counter-client.c -o counter-client
