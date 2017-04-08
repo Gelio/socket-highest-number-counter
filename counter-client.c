@@ -51,15 +51,14 @@ int main(int argc, char **argv)
 
         uint32_t initialNumber = 1 + rand() % 1000;
         printf("\tSending %d to the server\n", initialNumber);
-        if (networkWriteNumber(socketFd, initialNumber) == 0)
+        if (networkWriteNumber(socketFd, initialNumber) < 0)
         {
             printf("\tCannot send number\n");
             break;
         }
-            
         
         uint32_t responseNumber;
-        if (networkReadNumber(socketFd, &responseNumber) == 0)
+        if (networkReadNumber(socketFd, &responseNumber) < 0)
         {
             printf("\tCannot read number, connection broken\n");
             break;

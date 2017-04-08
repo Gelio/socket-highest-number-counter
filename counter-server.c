@@ -32,6 +32,7 @@ int main(int argc, char **argv)
     
     printf("Listening for connections on %d\n", PORT);
     uint32_t highestNumber = 0;
+    int totalNumbersSent = 0;
 
     while (1)
     {
@@ -43,15 +44,15 @@ int main(int argc, char **argv)
         
         printf("\tClient connected, reading numbers\n");
 
-        ssize_t bytesRead;
-        do
+        while (1)
         {
             uint32_t number;
-            if ((bytesRead = networkReadNumber(clientFd, &number)) == 0)
+            if (networkReadNumber(clientFd, &number) < 0)
             {
                 printf("Client disconnected\n");
                 break;
             }
+            totalNumbersSent++;
             
             printf("\tReceived %d from client\n", number);
 
@@ -65,7 +66,7 @@ int main(int argc, char **argv)
 
             if (networkWriteNumber(clientFd, highestNumber) < 0)
                 ERR("write");
-        } while (bytesRead > 0);
+        }
         
         printf("Closing client socket\n");
         if (close(clientFd) < 0)
