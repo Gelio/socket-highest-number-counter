@@ -55,6 +55,7 @@ void removeClient(client_t **clientHead, client_t **clientTail, client_t *client
                     *clientTail = currentClient;
                 break;
             }
+            currentClient = currentClient->next;
         }
     }
 
